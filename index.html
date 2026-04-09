@@ -3,45 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tool Lọc Pattern + 6 Số</title>
+    <title>Tool Lọc Pattern Pro</title>
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #121212; 
             color: #e0e0e0; 
-            margin: 20px;
+            margin: 10px;
         }
 
-        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        .container { max-width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
 
         .config-bar {
-            background: #1e1e1e; padding: 20px;
+            background: #1e1e1e; padding: 15px;
             border-radius: 8px; border: 1px solid #333;
-            display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+            display: flex; align-items: center; gap: 15px; flex-wrap: wrap;
         }
 
         #inputText { display: none; }
 
-        .output-panel { 
-            height: calc(100vh - 300px); 
-            padding: 20px; 
-            border-radius: 8px; 
-            border: 1px solid #444; 
-            background-color: #181818; 
-            color: #ffffff;
-            font-size: 18px; 
-            overflow-y: auto; 
-            white-space: pre-wrap;
-            line-height: 2;
-            font-family: monospace;
+        .output-grid { 
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 15px;
+            height: calc(100vh - 220px); 
+            overflow-y: auto;
+            background-color: #181818;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
         }
 
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+        .column { display: flex; flex-direction: column; gap: 5px; }
+
+        .result-item {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 19px;
+            padding: 6px 10px;
+            border-bottom: 1px solid #252525;
+            white-space: nowrap;
+        }
+
+        .controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
         button, .file-label { 
-            padding: 12px 24px; cursor: pointer; border: none; 
-            border-radius: 6px; font-weight: bold; font-size: 14px;
-            transition: 0.3s;
+            padding: 10px 15px; cursor: pointer; border: none; 
+            border-radius: 6px; font-weight: bold; font-size: 13px;
         }
         
         .btn-Ab { background: #ffff00; color: #000; }
@@ -49,69 +56,87 @@
         .btn-clear { background: #444; color: #fff; }
         .btn-file { background: #3700b3; color: #fff; }
 
-        button:hover { opacity: 0.8; transform: translateY(-2px); }
-
-        .pattern-part { font-weight: bold; text-decoration: underline; }
-        .suffix-part { color: #888; font-size: 16px; margin-right: 20px; }
+        .pattern-part { font-weight: bold; }
+        .suffix-part { color: #888; margin-left: 5px; }
+        /* Màu cho 6 số sau nếu đồng nhất */
+        .suffix-highlight { color: #00f2ff !important; font-weight: bold; text-shadow: 0 0 5px #00bfff; }
         
         input[type="number"] {
-            padding: 8px; width: 60px; border-radius: 4px; border: 1px solid #444; 
-            background: #2c2c2c; color: #fff; text-align: center; font-size: 16px;
+            padding: 5px; width: 50px; border-radius: 4px; border: 1px solid #444; 
+            background: #2c2c2c; color: #fff; text-align: center;
         }
         
-        #status-title { font-size: 14px; color: #aaa; margin-bottom: -10px; }
+        #status-info { color: #03dac6; font-size: 13px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="config-bar">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <label>Độ dài Pattern:</label>
-            <input type="number" id="patternLen" value="4" min="2">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label>Độ dài:</label>
+            <input type="number" id="patternLen" value="4" min="2" oninput="saveConfig()">
         </div>
         
         <div class="controls">
-            <button class="btn-Ab" onclick="processData('Ab')">LỌC DÃY AbAb...</button>
-            <button class="btn-bA" onclick="processData('bA')">LỌC DÃY bAbA...</button>
+            <button class="btn-Ab" onclick="processData('Ab')">LỌC AbAb...</button>
+            <button class="btn-bA" onclick="processData('bA')">LỌC bAbA...</button>
+            <span id="status-info"></span>
         </div>
 
-        <div style="margin-left: auto; display: flex; gap: 10px;">
-            <label class="file-label btn-file">📁 CHỌN FILE <input type="file" id="fileInput" accept=".txt" style="display:none"></label>
+        <div style="margin-left: auto; display: flex; gap: 8px;">
+            <label class="file-label btn-file">📁 FILE <input type="file" id="fileInput" accept=".txt" style="display:none"></label>
             <button class="btn-clear" onclick="clearAll()">🗑️ XÓA</button>
         </div>
     </div>
 
-    <div id="status-title">Kết quả hiển thị: Đang trống</div>
-    <div id="mainOutput" class="output-panel"></div>
+    <div id="outputGrid" class="output-grid">
+        <div class="column" id="col1"></div>
+        <div class="column" id="col2"></div>
+        <div class="column" id="col3"></div>
+    </div>
     
     <textarea id="inputText"></textarea>
 </div>
 
 <script>
     const inputEl = document.getElementById('inputText');
-    const outputEl = document.getElementById('mainOutput');
+    const cols = [document.getElementById('col1'), document.getElementById('col2'), document.getElementById('col3')];
     const patternLenEl = document.getElementById('patternLen');
-    const statusTitle = document.getElementById('status-title');
+    const statusInfo = document.getElementById('status-info');
 
-    // Logic: A (5-9), b (0-4)
     const isA = (c) => /[0-9]/.test(c) && parseInt(c) >= 5;
+
+    // Kiểm tra xem chuỗi có đồng nhất toàn A hoặc toàn b không
+    function isHomogeneous(str) {
+        if (!str) return false;
+        let firstIsA = isA(str[0]);
+        for (let i = 1; i < str.length; i++) {
+            if (isA(str[i]) !== firstIsA) return false;
+        }
+        return true;
+    }
+
+    function saveConfig() {
+        localStorage.setItem('dual_tool_len', patternLenEl.value);
+    }
 
     function processData(mode) {
         const text = inputEl.value.replace(/[^0-9]/g, '');
         const pLen = parseInt(patternLenEl.value) || 4;
-        const sLen = 6; // Độ dài chuỗi phía sau
+        const sLen = 6; 
         let results = [];
 
-        statusTitle.innerText = `Đang hiển thị: Dãy ${mode} (Độ dài ${pLen}) + 6 số sau`;
+        // Lưu chế độ lọc hiện tại vào localStorage
+        localStorage.setItem('dual_tool_last_mode', mode);
+
+        cols.forEach(c => c.innerHTML = "");
 
         for (let i = 0; i <= text.length - (pLen + sLen); i++) {
             let patternPart = text.substring(i, i + pLen);
             let suffixPart = text.substring(i + pLen, i + pLen + sLen);
             
-            // Kiểm tra tính xen kẽ
             let isValid = true;
-            // Xác định xem bắt đầu bằng A hay b theo mode yêu cầu
             if (mode === 'Ab' && !isA(patternPart[0])) isValid = false;
             if (mode === 'bA' && isA(patternPart[0])) isValid = false;
 
@@ -125,20 +150,27 @@
             }
 
             if (isValid) {
-                let color = mode === 'Ab' ? '#ffff00' : '#00bfff';
-                results.push(`<span class="item"><span class="pattern-part" style="color:${color}">${patternPart}</span> - <span class="suffix-part">${suffixPart}</span></span>`);
+                let pColor = mode === 'Ab' ? '#ffff00' : '#00bfff';
+                // Kiểm tra 6 số sau có đồng nhất không để bôi xanh da trời
+                let suffixClass = isHomogeneous(suffixPart) ? 'suffix-part suffix-highlight' : 'suffix-part';
+                
+                results.push(`<div class="result-item"><span class="pattern-part" style="color:${pColor}">${patternPart}</span> - <span class="${suffixClass}">${suffixPart}</span></div>`);
             }
         }
 
-        outputEl.innerHTML = results.length > 0 ? results.join("") : "Không tìm thấy kết quả nào.";
+        results.forEach((html, index) => {
+            cols[index % 3].innerHTML += html;
+        });
+
+        statusInfo.innerText = `Tìm thấy: ${results.length}`;
     }
 
     function clearAll() {
         if(confirm("Xóa sạch dữ liệu?")) {
             inputEl.value = "";
-            outputEl.innerHTML = "";
-            statusTitle.innerText = "Kết quả hiển thị: Đang trống";
-            localStorage.removeItem('saved_tool_pattern_v2');
+            cols.forEach(c => c.innerHTML = "");
+            statusInfo.innerText = "";
+            localStorage.clear();
         }
     }
 
@@ -148,16 +180,26 @@
             const r = new FileReader();
             r.onload = (ev) => { 
                 inputEl.value = ev.target.result; 
-                localStorage.setItem('saved_tool_pattern_v2', inputEl.value);
-                alert("Đã nạp dữ liệu xong! Hãy bấm nút Lọc.");
+                localStorage.setItem('dual_tool_data', inputEl.value);
+                statusInfo.innerText = "Đã nạp file!";
             };
             r.readAsText(f);
         }
     });
 
     window.onload = () => {
-        const saved = localStorage.getItem('saved_tool_pattern_v2');
-        if (saved) inputEl.value = saved;
+        // Khôi phục dữ liệu từ LocalStorage
+        const savedData = localStorage.getItem('dual_tool_data');
+        const savedLen = localStorage.getItem('dual_tool_len');
+        const lastMode = localStorage.getItem('dual_tool_last_mode');
+
+        if (savedData) inputEl.value = savedData;
+        if (savedLen) patternLenEl.value = savedLen;
+        
+        // Nếu trước đó đang lọc dở thì tự động chạy lại
+        if (savedData && lastMode) {
+            processData(lastMode);
+        }
     };
 </script>
 </body>
