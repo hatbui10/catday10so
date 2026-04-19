@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phân tích số liệu - Giao diện tối giản</title>
+    <title>Phân tích số liệu - Auto Load</title>
     <style>
         :root {
             --body-bg: #121212;
@@ -14,6 +14,7 @@
             --cell-gap: 5px;
             --bg-high: #ffd700; 
             --bg-low: #4caf50;  
+            --primary: #007bff;
         }
 
         body {
@@ -21,7 +22,7 @@
             background-color: var(--body-bg);
             color: var(--text-color);
             margin: 0;
-            padding: 10px 0; /* Padding dọc cho trang */
+            padding: 10px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -32,15 +33,25 @@
             max-width: 1200px;
         }
 
-        h2 { font-size: 1.2rem; text-align: center; margin-bottom: 20px; color: #666; }
+        /* Hiển thị số lượng */
+        .info-bar {
+            text-align: center;
+            font-size: 14px;
+            color: #aaa;
+            margin: 10px 0;
+            padding: 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+        }
+        #total-count { color: var(--bg-high); font-weight: bold; font-size: 16px; }
 
         /* THANH STT - TÀNG HÌNH */
         .sticky-header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: var(--body-bg); /* Nền trùng màu máy để che số khi cuộn */
-            padding: 10px 3px; /* Cách mép đúng 3px */
+            background: var(--body-bg);
+            padding: 10px 3px; 
             overflow-x: hidden;
             display: block;
         }
@@ -49,12 +60,11 @@
         #result-container { 
             width: 100%;
             overflow-x: auto; 
-            padding: 10px 3px; /* Cách mép đúng 3px */
+            padding: 10px 3px; 
             -webkit-overflow-scrolling: touch;
             box-sizing: border-box;
         }
 
-        /* GRID ĐỒNG BỘ */
         .sync-grid {
             display: grid;
             gap: var(--cell-gap);
@@ -62,7 +72,6 @@
             width: max-content;
         }
 
-        /* Ô SỐ THỨ TỰ (0-9) */
         .index-box {
             width: var(--cell-size);
             height: var(--cell-size);
@@ -88,7 +97,6 @@
         .idx-8 { background: linear-gradient(135deg, #eb3349, #f45c43); }
         .idx-9 { background: linear-gradient(135deg, #4568dc, #b06ab3); }
 
-        /* Ô SỐ KẾT QUẢ */
         .number-box {
             width: var(--cell-size);
             height: var(--cell-size);
@@ -150,16 +158,22 @@
         </div>
     </div>
 
+    <div class="info-bar">Tổng số lượng chữ số: <span id="total-count">0</span></div>
+
     <div id="result-container">
         <div id="result-grid" class="sync-grid"></div>
     </div>
 </div>
 
 <script>
+    const fileInput = document.getElementById('fileInput');
     const rowLengthInput = document.getElementById('rowLength');
     const headerGrid = document.getElementById('header-grid');
     const resultContainer = document.getElementById('result-container');
     const headerWrapper = document.getElementById('headerWrapper');
+    const totalCountSpan = document.getElementById('total-count');
+
+    let currentNumbers = []; // Biến lưu trữ số liệu đã đọc
 
     // Đồng bộ cuộn ngang
     resultContainer.onscroll = function() {
@@ -172,9 +186,28 @@
         updateHeaderGrid();
     };
 
+    // Khi thay đổi file, đọc và đếm số lượng ngay lập tức
+    fileInput.addEventListener('change', function() {
+        if (!this.files[0]) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const rawText = e.target.result;
+            // Xử lý dữ liệu
+            const cleanText = rawText.replace(/\\/g, ' ').replace(/\\/gi, ' ');
+            currentNumbers = cleanText.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+            
+            // Hiện số lượng ngay khi load xong
+            totalCountSpan.textContent = currentNumbers.length;
+        };
+        reader.readAsText(this.files[0]);
+    });
+
     rowLengthInput.addEventListener('input', function() {
         localStorage.setItem('userRowLength', rowLengthInput.value);
         updateHeaderGrid();
+        // Nếu đã có dữ liệu thì vẽ lại lưới luôn khi thay đổi x
+        if (currentNumbers.length > 0) renderGrid(currentNumbers, parseInt(this.value), '');
     });
 
     function updateHeaderGrid() {
@@ -191,18 +224,12 @@
     }
 
     function processData(mode) {
-        const fileInput = document.getElementById('fileInput');
+        if (currentNumbers.length === 0) {
+            alert("Vui lòng tải file hoặc chờ file load xong!");
+            return;
+        }
         const x = parseInt(rowLengthInput.value);
-        if (!fileInput.files[0]) { alert("Vui lòng tải file!"); return; }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const rawText = e.target.result;
-            // Xử lý dữ liệu bỏ qua [source] và dấu \
-            const cleanText = rawText.replace(/\\/g, ' ').replace(/\\/gi, ' ');
-            const numbers = cleanText.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-            renderGrid(numbers, x, mode);
-        };
-        reader.readAsText(fileInput.files[0]);
+        renderGrid(currentNumbers, x, mode);
     }
 
     function renderGrid(data, columns, mode) {
