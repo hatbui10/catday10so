@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phân tích số liệu Pro - Mobile Ready</title>
+    <title>Phân tích số liệu Pro - Căn chỉnh lề</title>
     <style>
         :root {
             --primary: #007bff;
@@ -15,6 +15,8 @@
             --input-bg: #2d2d2d;
             --control-bg: #252525;
             --border-color: #333;
+            --cell-size: 30px;
+            --cell-gap: 5px;
         }
 
         body {
@@ -34,42 +36,44 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
             box-sizing: border-box;
         }
 
-        h2 { font-size: 1.2rem; text-align: center; margin: 10px 0 20px; }
-
-        /* Hộp nổi (Sticky Header) - Tối ưu cho Mobile */
+        /* Hộp nổi cố định */
         .sticky-header {
             position: sticky;
             top: 5px;
             z-index: 100;
             background: var(--control-bg);
-            padding: 10px;
+            padding: 15px 3px; /* Đã bổ sung 3px trái phải ở đây */
             border-radius: 10px;
-            border: 1px solid #444;
-            margin-bottom: 15px;
+            border: 2px solid #444;
+            margin-bottom: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            overflow-x: hidden; 
         }
 
         .header-title {
-            font-size: 10px;
+            font-size: 11px;
             text-transform: uppercase;
             color: #888;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-align: center;
+            font-weight: bold;
         }
 
-        .index-row {
-            display: flex;
-            justify-content: center;
-            gap: 4px; /* Giảm khoảng cách trên mobile */
+        .sync-grid {
+            display: grid;
+            gap: var(--cell-gap);
+            justify-content: start;
+            width: max-content;
+            /* Loại bỏ margin auto để sát về lề trái có padding */
         }
 
         .index-box {
-            width: 30px; /* Thu nhỏ một chút để vừa màn hình dọc */
-            height: 30px;
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -79,7 +83,7 @@
             color: white;
         }
 
-        /* Màu lung linh */
+        /* Màu STT lung linh */
         .idx-0 { background: linear-gradient(135deg, #ff4b1f, #ff9068); }
         .idx-1 { background: linear-gradient(135deg, #1fddff, #1291ff); }
         .idx-2 { background: linear-gradient(135deg, #ff00cc, #333399); }
@@ -91,7 +95,6 @@
         .idx-8 { background: linear-gradient(135deg, #eb3349, #f45c43); }
         .idx-9 { background: linear-gradient(135deg, #4568dc, #b06ab3); }
 
-        /* Form điều khiển */
         .controls {
             display: flex;
             flex-direction: column;
@@ -111,43 +114,28 @@
             border-radius: 6px; 
             background: var(--input-bg); 
             color: white; 
-            font-size: 16px; /* Tránh iOS zoom khi click */
+            font-size: 16px; 
         }
 
         .btn-group { display: flex; gap: 8px; margin-top: 5px; }
-        .main-btn { 
-            flex: 1; 
-            color: white; 
-            border: none; 
-            padding: 12px 5px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 13px;
-        }
+        .main-btn { flex: 1; color: white; border: none; padding: 12px 5px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-high { background-color: #b8860b; }
         .btn-low { background-color: #2e7d32; }
 
-        /* Vùng kết quả - Cực kỳ quan trọng trên Mobile */
+        /* Vùng kết quả cuộn ngang */
         #result-container { 
-            overflow-x: auto; /* Cho phép cuộn ngang nếu x quá lớn */
+            overflow-x: auto; 
             width: 100%;
             background: #1a1a1a;
-            padding: 10px 0;
+            padding: 15px 3px; /* Đã bổ sung 3px trái phải ở đây */
             border-radius: 8px;
-            -webkit-overflow-scrolling: touch; /* Cuộn mượt trên iPhone */
-        }
-
-        #result-grid { 
-            display: grid; 
-            gap: 4px; 
-            margin: 0 auto;
-            width: max-content; /* Đảm bảo grid không bị bóp méo */
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
         }
 
         .number-box {
-            width: 30px;
-            height: 30px;
+            width: var(--cell-size);
+            height: var(--cell-size);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -158,38 +146,21 @@
             color: #fff;
         }
 
-        .high { background-color: var(--bg-high) !important; color: #000 !important; box-shadow: 0 0 5px var(--bg-high); }
-        .low { background-color: var(--bg-low) !important; color: #fff !important; box-shadow: 0 0 5px var(--bg-low); }
+        .high { background-color: var(--bg-high) !important; color: #000 !important; box-shadow: 0 0 8px var(--bg-high); }
+        .low { background-color: var(--bg-low) !important; color: #fff !important; box-shadow: 0 0 8px var(--bg-low); }
 
-        /* Tối ưu hóa thêm cho Desktop */
         @media (min-width: 600px) {
             .controls { flex-direction: row; align-items: flex-end; }
-            h2 { font-size: 1.5rem; }
-            .index-box { width: 35px; height: 35px; }
-            .index-row { gap: 8px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Phân tích số liệu Pro</h2>
-
-    
-        <div class="header-title">Thanh đối chiếu</div>
-        <div class="index-row">
-            <div class="index-box idx-0">0</div>
-            <div class="index-box idx-1">1</div>
-            <div class="index-box idx-2">2</div>
-            <div class="index-box idx-3">3</div>
-            <div class="index-box idx-4">4</div>
-            <div class="index-box idx-5">5</div>
-            <div class="index-box idx-6">6</div>
-            <div class="index-box idx-7">7</div>
-            <div class="index-box idx-8">8</div>
-            <div class="index-box idx-9">9</div>
-        </div>
-    
+    <div class="sticky-header" id="headerWrapper">
+        <div class="header-title">Thanh đối chiếu STT</div>
+        <div id="header-grid" class="sync-grid"></div>
+    </div>
 
     <div class="controls">
         <div class="control-group">
@@ -201,34 +172,54 @@
             <input type="number" id="rowLength" value="10" min="1">
         </div>
         <div class="btn-group">
-            <button class="main-btn btn-high" onclick="processData('high')">TÔ VÀNG</button>
-            <button class="main-btn btn-low" onclick="processData('low')">TÔ XANH</button>
+            <button class="main-btn btn-high" onclick="processData('high')">TÔ VÀNG (≥5)</button>
+            <button class="main-btn btn-low" onclick="processData('low')">TÔ XANH (<5)</button>
         </div>
     </div>
 
     <div id="result-container">
-        <div id="result-grid"></div>
+        <div id="result-grid" class="sync-grid"></div>
     </div>
 </div>
 
 <script>
     const rowLengthInput = document.getElementById('rowLength');
+    const headerGrid = document.getElementById('header-grid');
+    const resultContainer = document.getElementById('result-container');
+    const headerWrapper = document.getElementById('headerWrapper');
+
+    resultContainer.onscroll = function() {
+        headerWrapper.scrollLeft = resultContainer.scrollLeft;
+    };
 
     window.onload = function() {
         const savedLength = localStorage.getItem('userRowLength');
         if (savedLength) rowLengthInput.value = savedLength;
+        updateHeaderGrid();
     };
 
     rowLengthInput.addEventListener('input', function() {
         localStorage.setItem('userRowLength', rowLengthInput.value);
+        updateHeaderGrid();
     });
+
+    function updateHeaderGrid() {
+        const x = parseInt(rowLengthInput.value) || 10;
+        headerGrid.style.gridTemplateColumns = `repeat(${x}, var(--cell-size))`;
+        headerGrid.innerHTML = '';
+        for (let i = 0; i < x; i++) {
+            const stt = i % 10;
+            const box = document.createElement('div');
+            box.className = `index-box idx-${stt}`;
+            box.textContent = stt;
+            headerGrid.appendChild(box);
+        }
+    }
 
     function processData(mode) {
         const fileInput = document.getElementById('fileInput');
         const x = parseInt(rowLengthInput.value);
-
         if (!fileInput.files[0]) { alert("Vui lòng tải file!"); return; }
-        
         const reader = new FileReader();
         reader.onload = function(e) {
             const rawText = e.target.result;
@@ -242,8 +233,7 @@
     function renderGrid(data, columns, mode) {
         const grid = document.getElementById('result-grid');
         grid.innerHTML = ''; 
-        grid.style.gridTemplateColumns = `repeat(${columns}, 30px)`;
-
+        grid.style.gridTemplateColumns = `repeat(${columns}, var(--cell-size))`;
         data.forEach(num => {
             const box = document.createElement('div');
             box.className = 'number-box';
