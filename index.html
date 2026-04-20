@@ -181,8 +181,21 @@
     };
 
     window.onload = function() {
+        // Tải Độ dài (x)
         const savedLength = localStorage.getItem('userRowLength');
         if (savedLength) rowLengthInput.value = savedLength;
+        
+        // Tải Dữ liệu số đã lưu
+        const savedData = localStorage.getItem('userCurrentNumbers');
+        if (savedData) {
+            currentNumbers = JSON.parse(savedData);
+            totalCountSpan.textContent = currentNumbers.length;
+            
+            // Tải chế độ màu sắc đã dùng cuối cùng
+            const savedMode = localStorage.getItem('userLastMode') || '';
+            renderGrid(currentNumbers, parseInt(rowLengthInput.value), savedMode);
+        }
+
         updateHeaderGrid();
     };
 
@@ -197,8 +210,14 @@
             const cleanText = rawText.replace(/\\/g, ' ').replace(/\\/gi, ' ');
             currentNumbers = cleanText.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
             
+            // Lưu dữ liệu vào LocalStorage
+            localStorage.setItem('userCurrentNumbers', JSON.stringify(currentNumbers));
+            
             // Hiện số lượng ngay khi load xong
             totalCountSpan.textContent = currentNumbers.length;
+            
+            // Render grid mặc định khi mới chọn file
+            renderGrid(currentNumbers, parseInt(rowLengthInput.value), '');
         };
         reader.readAsText(this.files[0]);
     });
@@ -207,7 +226,10 @@
         localStorage.setItem('userRowLength', rowLengthInput.value);
         updateHeaderGrid();
         // Nếu đã có dữ liệu thì vẽ lại lưới luôn khi thay đổi x
-        if (currentNumbers.length > 0) renderGrid(currentNumbers, parseInt(this.value), '');
+        if (currentNumbers.length > 0) {
+            const lastMode = localStorage.getItem('userLastMode') || '';
+            renderGrid(currentNumbers, parseInt(this.value), lastMode);
+        }
     });
 
     function updateHeaderGrid() {
@@ -229,6 +251,8 @@
             return;
         }
         const x = parseInt(rowLengthInput.value);
+        // Lưu chế độ hiện tại (vàng/xanh)
+        localStorage.setItem('userLastMode', mode);
         renderGrid(currentNumbers, x, mode);
     }
 
