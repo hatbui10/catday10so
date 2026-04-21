@@ -226,7 +226,7 @@
         for (let x = 2; x <= 10; x++) {
             for (let k = 1; k <= 30; k++) {
                 const u = checkU(currentNumbers, x, k);
-                if (u > 0 && u <= 3) {
+                if (u >= 0 && u <= 3) {
                     const item = document.createElement('div');
                     item.className = 'result-item';
                     item.innerHTML = `X:<b>${x}</b> | K:<b>${k}</b> (u=${u})`;
