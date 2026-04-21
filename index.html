@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phân tích số liệu - Logic 5 Số Ngược</title>
+    <title>Phân tích số liệu - Có STT Hàng</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -17,7 +17,7 @@
             --gold: #ffcc00;
             --green: #00e676;
             --danger: #ff5252;
-            --cell-size: 32px;
+            --cell-size: 30px; /* Thu nhỏ chút để thêm cột STT */
             --gap: 3px;
             --radius: 8px;
         }
@@ -30,43 +30,45 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        .container { width: 100%; max-width: 1000px; }
+        .container { width: 100%; max-width: 1200px; }
 
         .sticky-header {
             position: sticky; top: 0; z-index: 100;
-            background: rgba(10, 10, 12, 0.9);
+            background: rgba(10, 10, 12, 0.95);
             backdrop-filter: blur(8px);
             padding: 8px 0; margin-bottom: 10px;
             border-bottom: 1px solid #2d2d3d;
             overflow-x: auto; scrollbar-width: none;
+            display: flex; /* Để căn lề với bảng có STT */
         }
-        .sticky-header::-webkit-scrollbar { display: none; }
+        
+        /* Khoảng trống bù cho cột STT ở header */
+        .header-spacer {
+            min-width: 40px; 
+            margin-right: var(--gap);
+            background: transparent;
+        }
 
         .controls {
             background: var(--card-bg);
             border-radius: var(--radius);
-            padding: 15px; margin-bottom: 15px;
-            display: flex; flex-direction: column; gap: 12px;
+            padding: 12px; margin-bottom: 12px;
+            display: flex; flex-direction: column; gap: 10px;
             border: 1px solid #2d2d3d;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
         .row { display: flex; gap: 10px; flex-wrap: wrap; }
         .control-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
         
-        label { 
-            font-size: 10px; color: var(--text-dim); 
-            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-        }
+        label { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
 
         input {
             background: var(--input-bg);
             border: 1px solid #333; border-radius: 6px;
             padding: 8px 10px; color: white;
             font-family: 'JetBrains Mono', monospace; font-size: 13px;
-            outline: none; transition: 0.2s;
+            outline: none;
         }
-        input:focus { border-color: var(--primary); }
 
         .btn-group { display: flex; gap: 8px; width: 100%; }
         .main-btn {
@@ -75,30 +77,46 @@
             text-transform: uppercase; transition: 0.2s;
         }
         .btn-apply { background: var(--primary); color: white; }
-        .btn-reset { background: transparent; color: var(--danger); border: 1px solid var(--danger); flex: 0 0 110px; }
+        .btn-reset { background: transparent; color: var(--danger); border: 1px solid var(--danger); flex: 0 0 100px; }
         .btn-high { background: var(--gold); color: #000; }
         .btn-low { background: var(--green); color: #000; }
 
         .info-bar {
-            background: #1e1e2e; padding: 10px; border-radius: 6px;
-            text-align: center; font-size: 13px; margin-bottom: 15px;
+            background: #1e1e2e; padding: 8px; border-radius: 6px;
+            text-align: center; font-size: 12px; margin-bottom: 10px;
             border-left: 4px solid var(--primary);
         }
 
         #result-container {
             width: 100%; background: #0d0d12;
-            border-radius: var(--radius); padding: 12px;
+            border-radius: var(--radius); padding: 10px;
             box-sizing: border-box; border: 1px solid #2d2d3d;
             overflow-x: auto;
         }
 
-        .sync-grid { display: grid; gap: var(--gap); width: max-content; margin: 0 auto; }
+        /* Bố cục Grid có cột STT */
+        .sync-grid { 
+            display: grid; 
+            gap: var(--gap); 
+            width: max-content; 
+        }
 
-        .number-box, .index-box {
+        .number-box, .index-box, .row-stt {
             width: var(--cell-size); height: var(--cell-size);
             display: flex; justify-content: center; align-items: center;
             font-weight: 700; border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace; font-size: 14px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        }
+
+        /* Style cho cột STT hàng dọc */
+        .row-stt {
+            background: red;
+            color: white;
+            margin-right: 10px;
+            font-size: 10px;
+            min-width: 40px; /* Độ rộng cột STT */
+            border-right: 2px solid #2d2d3d;
+            position: sticky; left: 0; z-index: 2;
         }
 
         .index-box { color: white; font-size: 11px; }
@@ -113,15 +131,8 @@
             border: 1px solid rgba(255,255,255,0.03);
         }
 
-        /* Màu vàng cho dãy ngược */
-        .high { 
-            background: var(--gold) !important; color: #000 !important; 
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.4); 
-        }
-        /* Màu xanh cho số nhỏ */
-        .low { 
-            background: var(--green) !important; color: #000 !important; 
-        }
+        .high { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 10px rgba(255, 204, 0, 0.4); }
+        .low { background: var(--green) !important; color: #000 !important; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -131,7 +142,7 @@
 
 <div class="container">
     <div class="sticky-header" id="headerWrapper">
-        <div id="header-grid" class="sync-grid"></div>
+        <div class="header-spacer"></div> <div id="header-grid" class="sync-grid"></div>
     </div>
 
     <div class="controls">
@@ -141,29 +152,27 @@
                 <input type="file" id="fileInput" accept=".txt">
             </div>
             <div class="control-group">
-                <label>Cột (X)</label>
+                <label>Số cột (X)</label>
                 <input type="number" id="rowLength" value="10">
             </div>
         </div>
-
         <div class="control-group">
             <label>Quy tắc T1 (A:>=5, B:<5)</label>
             <div class="btn-group">
                 <input type="text" id="t1Input" style="flex: 1;" placeholder="VD: AAAbbb">
-                <button class="main-btn btn-apply" onclick="applyT1()">ÁP DỤNG (SOI 5 NGƯỢC)</button>
+                <button class="main-btn btn-apply" onclick="applyT1()">ÁP DỤNG SOI NGƯỢC</button>
                 <button class="main-btn btn-reset" onclick="clearMemory()">Reset</button>
             </div>
         </div>
-
         <div class="btn-group">
-            <button class="main-btn btn-high" onclick="processData('big')">Chỉ tô số Lớn</button>
-            <button class="main-btn btn-low" onclick="processData('small')">Chỉ tô số Nhỏ</button>
+            <button class="main-btn btn-high" onclick="processData('big')">Tô số Lớn</button>
+            <button class="main-btn btn-low" onclick="processData('small')">Tô số Nhỏ</button>
         </div>
     </div>
 
     <div class="info-bar">
         T1: <span id="current-t1-display" style="color: var(--primary); font-weight: bold;">--</span> 
-        | Tổng: <span id="total-count" style="color: var(--green);">0</span> số
+        | Dữ liệu: <span id="total-count" style="color: var(--green);">0</span>
     </div>
 
     <div id="result-container">
@@ -260,23 +269,21 @@
     function renderGrid(data, columns, mode) {
         resultGrid.innerHTML = ''; 
         if (data.length === 0) return;
-        resultGrid.style.gridTemplateColumns = `repeat(${columns}, var(--cell-size))`;
+        
+        // Cột STT + số cột dữ liệu
+        resultGrid.style.gridTemplateColumns = `40px repeat(${columns}, var(--cell-size))`;
         
         const T1 = t1Input.value.trim().toUpperCase() || 'AAAb';
         const t1Len = T1.length;
         const isYellow = new Array(data.length).fill(false);
 
-        // LOGIC SOI DÃY 5 NGƯỢC
         if (mode === 't1') {
-            // 1. Đánh dấu các vị trí bị "Ngược"
             const reversedMap = data.map((num, i) => {
                 const char = T1[i % t1Len];
-                if (char === 'A') return num < 5; // Yêu cầu Lớn nhưng ra Nhỏ -> Ngược
-                if (char === 'B') return num >= 5; // Yêu cầu Nhỏ nhưng ra Lớn -> Ngược
+                if (char === 'A') return num < 5;
+                if (char === 'B') return num >= 5;
                 return false;
             });
-
-            // 2. Tìm cụm 5 cái "Ngược" liên tiếp
             for (let i = 0; i <= data.length - 5; i++) {
                 if (reversedMap[i] && reversedMap[i+1] && reversedMap[i+2] && reversedMap[i+3] && reversedMap[i+4]) {
                     for (let j = 0; j < 5; j++) isYellow[i+j] = true;
@@ -286,6 +293,14 @@
 
         const fragment = document.createDocumentFragment();
         data.forEach((num, index) => {
+            // Nếu là đầu hàng, chèn ô STT
+            if (index % columns === 0) {
+                const sttBox = document.createElement('div');
+                sttBox.className = 'row-stt';
+                sttBox.textContent = (index / columns) + 1;
+                fragment.appendChild(sttBox);
+            }
+
             const box = document.createElement('div');
             box.className = 'number-box';
             box.textContent = num;
