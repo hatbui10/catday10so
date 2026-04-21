@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phân tích số liệu Compact Pro</title>
+    <title>Phân tích số liệu - Logic 5 Số Ngược</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -17,7 +17,7 @@
             --gold: #ffcc00;
             --green: #00e676;
             --danger: #ff5252;
-            --cell-size: 32px; /* Kích thước ô gọn gàng */
+            --cell-size: 32px;
             --gap: 3px;
             --radius: 8px;
         }
@@ -32,7 +32,6 @@
 
         .container { width: 100%; max-width: 1000px; }
 
-        /* Header dính gọn nhẹ */
         .sticky-header {
             position: sticky; top: 0; z-index: 100;
             background: rgba(10, 10, 12, 0.9);
@@ -43,7 +42,6 @@
         }
         .sticky-header::-webkit-scrollbar { display: none; }
 
-        /* Bảng điều khiển tối ưu không gian */
         .controls {
             background: var(--card-bg);
             border-radius: var(--radius);
@@ -70,7 +68,6 @@
         }
         input:focus { border-color: var(--primary); }
 
-        /* Nút bấm Compact */
         .btn-group { display: flex; gap: 8px; width: 100%; }
         .main-btn {
             flex: 1; border: none; padding: 10px; border-radius: 6px;
@@ -81,16 +78,13 @@
         .btn-reset { background: transparent; color: var(--danger); border: 1px solid var(--danger); flex: 0 0 110px; }
         .btn-high { background: var(--gold); color: #000; }
         .btn-low { background: var(--green); color: #000; }
-        .main-btn:active { transform: scale(0.96); }
 
-        /* Thanh thông tin */
         .info-bar {
             background: #1e1e2e; padding: 10px; border-radius: 6px;
             text-align: center; font-size: 13px; margin-bottom: 15px;
             border-left: 4px solid var(--primary);
         }
 
-        /* Container hiển thị số */
         #result-container {
             width: 100%; background: #0d0d12;
             border-radius: var(--radius); padding: 12px;
@@ -119,14 +113,14 @@
             border: 1px solid rgba(255,255,255,0.03);
         }
 
-        /* Highlight trạng thái */
+        /* Màu vàng cho dãy ngược */
         .high { 
             background: var(--gold) !important; color: #000 !important; 
             box-shadow: 0 0 10px rgba(255, 204, 0, 0.4); 
         }
+        /* Màu xanh cho số nhỏ */
         .low { 
             background: var(--green) !important; color: #000 !important; 
-            box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -143,33 +137,33 @@
     <div class="controls">
         <div class="row">
             <div class="control-group">
-                <label>File dữ liệu (.txt)</label>
+                <label>File (.txt)</label>
                 <input type="file" id="fileInput" accept=".txt">
             </div>
             <div class="control-group">
-                <label>Số cột (X)</label>
-                <input type="number" id="rowLength" value="10" min="1">
+                <label>Cột (X)</label>
+                <input type="number" id="rowLength" value="10">
             </div>
         </div>
 
         <div class="control-group">
-            <label>Chuỗi T1 (A: ≥5, B: <5)</label>
+            <label>Quy tắc T1 (A:>=5, B:<5)</label>
             <div class="btn-group">
                 <input type="text" id="t1Input" style="flex: 1;" placeholder="VD: AAAbbb">
-                <button class="main-btn btn-apply" onclick="applyT1()">Áp dụng</button>
-                <button class="main-btn btn-reset" onclick="clearMemory()">Dọn Cache</button>
+                <button class="main-btn btn-apply" onclick="applyT1()">ÁP DỤNG (SOI 5 NGƯỢC)</button>
+                <button class="main-btn btn-reset" onclick="clearMemory()">Reset</button>
             </div>
         </div>
 
         <div class="btn-group">
-            <button class="main-btn btn-high" onclick="processData('high')">Lọc số lớn (≥ 5)</button>
-            <button class="main-btn btn-low" onclick="processData('low')">Lọc số nhỏ (< 5)</button>
+            <button class="main-btn btn-high" onclick="processData('big')">Chỉ tô số Lớn</button>
+            <button class="main-btn btn-low" onclick="processData('small')">Chỉ tô số Nhỏ</button>
         </div>
     </div>
 
     <div class="info-bar">
-        Quy tắc: <span id="current-t1-display" style="color: var(--primary); font-weight: bold;">--</span> 
-        | Dữ liệu: <span id="total-count" style="color: var(--green);">0</span> số
+        T1: <span id="current-t1-display" style="color: var(--primary); font-weight: bold;">--</span> 
+        | Tổng: <span id="total-count" style="color: var(--green);">0</span> số
     </div>
 
     <div id="result-container">
@@ -190,7 +184,6 @@
 
     let currentNumbers = []; 
 
-    // Đồng bộ cuộn giữa header và bảng kết quả
     resultContainer.addEventListener('scroll', () => {
         headerWrapper.scrollLeft = resultContainer.scrollLeft;
     });
@@ -211,36 +204,35 @@
     };
 
     function clearMemory() {
-        if(confirm("Xóa toàn bộ thiết lập và dữ liệu đã lưu?")) {
-            localStorage.clear();
-            location.reload();
-        }
+        if(confirm("Xóa dữ liệu?")) { localStorage.clear(); location.reload(); }
     }
 
     function refreshAll() {
         const x = parseInt(rowLengthInput.value) || 10;
-        const mode = localStorage.getItem('userLastMode') || '';
+        const mode = localStorage.getItem('userLastMode') || 't1';
         updateHeaderGrid();
         renderGrid(currentNumbers, x, mode);
     }
 
     function applyT1() {
         const val = t1Input.value.trim();
-        if(!val) return alert("Vui lòng nhập T1!");
+        if(!val) return alert("Nhập T1!");
         localStorage.setItem('userT1', val);
         currentT1Display.textContent = val;
+        localStorage.setItem('userLastMode', 't1');
+        refreshAll();
+    }
+
+    function processData(mode) {
+        localStorage.setItem('userLastMode', mode);
         refreshAll();
     }
 
     fileInput.addEventListener('change', function() {
-        if (!this.files[0]) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            const rawText = e.target.result.trim();
-            // Đọc dữ liệu thô và lọc lấy các chữ số đơn lẻ
-            const cleanText = rawText.replace(/[\s\r\n\\,]+/g, '');
+            const cleanText = e.target.result.replace(/[\s\r\n\\,]+/g, '');
             currentNumbers = cleanText.split('').map(Number).filter(n => !isNaN(n));
-            
             localStorage.setItem('userCurrentNumbers', JSON.stringify(currentNumbers));
             totalCountSpan.textContent = currentNumbers.length;
             refreshAll();
@@ -265,29 +257,44 @@
         }
     }
 
-    function processData(mode) {
-        if (currentNumbers.length === 0) return alert("Chưa có dữ liệu!");
-        localStorage.setItem('userLastMode', mode);
-        refreshAll();
-    }
-
     function renderGrid(data, columns, mode) {
         resultGrid.innerHTML = ''; 
         if (data.length === 0) return;
         resultGrid.style.gridTemplateColumns = `repeat(${columns}, var(--cell-size))`;
         
+        const T1 = t1Input.value.trim().toUpperCase() || 'AAAb';
+        const t1Len = T1.length;
+        const isYellow = new Array(data.length).fill(false);
+
+        // LOGIC SOI DÃY 5 NGƯỢC
+        if (mode === 't1') {
+            // 1. Đánh dấu các vị trí bị "Ngược"
+            const reversedMap = data.map((num, i) => {
+                const char = T1[i % t1Len];
+                if (char === 'A') return num < 5; // Yêu cầu Lớn nhưng ra Nhỏ -> Ngược
+                if (char === 'B') return num >= 5; // Yêu cầu Nhỏ nhưng ra Lớn -> Ngược
+                return false;
+            });
+
+            // 2. Tìm cụm 5 cái "Ngược" liên tiếp
+            for (let i = 0; i <= data.length - 5; i++) {
+                if (reversedMap[i] && reversedMap[i+1] && reversedMap[i+2] && reversedMap[i+3] && reversedMap[i+4]) {
+                    for (let j = 0; j < 5; j++) isYellow[i+j] = true;
+                }
+            }
+        }
+
         const fragment = document.createDocumentFragment();
-        data.forEach((num) => {
+        data.forEach((num, index) => {
             const box = document.createElement('div');
             box.className = 'number-box';
             box.textContent = num;
             
-            // Logic tô màu đơn giản:
-            // Nút "Lọc số lớn": Tô vàng số >= 5
-            // Nút "Lọc số nhỏ": Tô xanh số < 5
-            if (mode === 'high' && num >= 5) {
+            if (mode === 't1' && isYellow[index]) {
                 box.classList.add('high');
-            } else if (mode === 'low' && num < 5) {
+            } else if (mode === 'big' && num >= 5) {
+                box.classList.add('high');
+            } else if (mode === 'small' && num < 5) {
                 box.classList.add('low');
             }
             
@@ -296,6 +303,5 @@
         resultGrid.appendChild(fragment);
     }
 </script>
-
 </body>
 </html>
