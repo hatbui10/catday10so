@@ -49,7 +49,7 @@
             padding: 10px 0; border-bottom: 2px solid #333; 
             overflow: hidden; /* Quan trọng để JS điều khiển cuộn */
         }
-        .header-content { display: flex; width: max-content; padding-left: 8px; }
+        .header-content { display: flex; width: max-content; padding-left: 9px; }
 
         .controls {
             background: var(--card-bg); border-radius: 12px; padding: 15px; margin: 15px 0;
@@ -227,7 +227,7 @@
         for (let x = 2; x <= 10; x++) {
             for (let k = 1; k <= 30; k++) {
                 const u = checkU(currentNumbers, x, k);
-                if (u >= 0 && u <= 3) {
+                if (u >= 0 && u <= 1) {
                     const item = document.createElement('div');
                     item.className = 'result-item';
                     item.innerHTML = `X:<b>${x}</b> | K:<b>${k}</b> (u=${u})`;
