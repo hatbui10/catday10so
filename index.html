@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phân tích số liệu - Có STT Hàng</title>
+    <title>P%</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -17,10 +17,16 @@
             --gold: #ffcc00;
             --green: #00e676;
             --danger: #ff5252;
-            --cell-size: 30px; /* Thu nhỏ chút để thêm cột STT */
+            
+            /* KÍCH THƯỚC Ô - SỬA Ở ĐÂY LÀ KHỚP CẢ BẢNG */
+            --cell-size: 32px; 
+            --stt-width: 45px;
+            --spacer-width: 15px;
             --gap: 3px;
             --radius: 8px;
         }
+
+        * { box-sizing: border-box; } /* Quan trọng: giúp border không làm tăng size ô */
 
         body {
             font-family: 'Inter', sans-serif;
@@ -32,61 +38,51 @@
 
         .container { width: 100%; max-width: 1200px; }
 
+        /* HEADER */
         .sticky-header {
             position: sticky; top: 0; z-index: 100;
-            background: rgba(10, 10, 12, 0.95);
-            backdrop-filter: blur(8px);
-            padding: 8px 0; margin-bottom: 10px;
-            border-bottom: 1px solid #2d2d3d;
-            overflow-x: auto; scrollbar-width: none;
-            display: flex; /* Để căn lề với bảng có STT */
-        }
-        
-        /* Khoảng trống bù cho cột STT ở header */
-        .header-spacer {
-            min-width: 40px; 
-            margin-right: var(--gap);
-            background: transparent;
+            background: var(--body-bg);
+            padding: 10px 0;
+            border-bottom: 2px solid #333;
+            overflow: hidden;
         }
 
+        .header-content {
+            display: flex;
+            width: max-content;
+            padding-left: 10px;
+        }
+
+        /* CONTROLS */
         .controls {
             background: var(--card-bg);
             border-radius: var(--radius);
-            padding: 12px; margin-bottom: 12px;
-            display: flex; flex-direction: column; gap: 10px;
+            padding: 15px; margin: 15px 0;
+            display: flex; flex-direction: column; gap: 12px;
             border: 1px solid #2d2d3d;
         }
 
         .row { display: flex; gap: 10px; flex-wrap: wrap; }
         .control-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
-        
         label { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
 
         input {
             background: var(--input-bg);
             border: 1px solid #333; border-radius: 6px;
             padding: 8px 10px; color: white;
-            font-family: 'JetBrains Mono', monospace; font-size: 13px;
-            outline: none;
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .btn-group { display: flex; gap: 8px; width: 100%; }
+        .btn-group { display: flex; gap: 8px; }
         .main-btn {
             flex: 1; border: none; padding: 10px; border-radius: 6px;
             font-weight: 700; cursor: pointer; font-size: 11px;
-            text-transform: uppercase; transition: 0.2s;
+            text-transform: uppercase;
         }
         .btn-apply { background: var(--primary); color: white; }
-        .btn-reset { background: transparent; color: var(--danger); border: 1px solid var(--danger); flex: 0 0 100px; }
-        .btn-high { background: var(--gold); color: #000; }
-        .btn-low { background: var(--green); color: #000; }
+        .btn-reset { background: #333; color: white; }
 
-        .info-bar {
-            background: #1e1e2e; padding: 8px; border-radius: 6px;
-            text-align: center; font-size: 12px; margin-bottom: 10px;
-            border-left: 4px solid var(--primary);
-        }
-
+        /* GRID SYSTEM */
         #result-container {
             width: 100%; background: #0d0d12;
             border-radius: var(--radius); padding: 10px;
@@ -94,85 +90,101 @@
             overflow-x: auto;
         }
 
-        /* Bố cục Grid có cột STT */
         .sync-grid { 
             display: grid; 
             gap: var(--gap); 
             width: max-content; 
         }
 
-        .number-box, .index-box, .row-stt {
-            width: var(--cell-size); height: var(--cell-size);
-            display: flex; justify-content: center; align-items: center;
-            font-weight: 700; border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        /* ĐỒNG BỘ TẤT CẢ CÁC Ô */
+        .number-box, .index-box, .row-stt, .spacer-cell {
+            width: var(--cell-size); 
+            height: var(--cell-size); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            font-weight: 700; 
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid transparent; /* Tạo khung sẵn để không lệch */
         }
 
-        /* Style cho cột STT hàng dọc */
+        /* Cột STT */
         .row-stt {
-            background: red;
+            width: var(--stt-width) !important;
+            background: #ff0000 !important;
             color: white;
-            margin-right: 10px;
-            font-size: 10px;
-            min-width: 40px; /* Độ rộng cột STT */
-            border-right: 2px solid #2d2d3d;
-            position: sticky; left: 0; z-index: 2;
+            font-size: 12px;
+            position: sticky; left: 0; z-index: 10;
+            border: none;
         }
 
-        .index-box { color: white; font-size: 11px; }
+        .spacer-cell {
+            width: var(--spacer-width) !important;
+            background: transparent !important;
+            border: none;
+        }
+
+        /* Ô Header số 0 1 2 3 */
+        .index-box { 
+            color: white; 
+            font-size: 11px;
+            border: 1px solid rgba(255,255,255,0.1); /* Thêm viền nhẹ cho header giống body */
+        }
+
         .idx-0 { background: #ff4b1f; } .idx-1 { background: #0052D4; } 
         .idx-2 { background: #8E2DE2; } .idx-3 { background: #11998e; }
         .idx-4 { background: #f09819; } .idx-5 { background: #4568dc; }
         .idx-6 { background: #D4145A; } .idx-7 { background: #009245; }
         .idx-8 { background: #662D8C; } .idx-9 { background: #2E3192; }
 
+        /* Ô Kết quả */
         .number-box { 
-            background: #1a1a24; color: #505066; 
-            border: 1px solid rgba(255,255,255,0.03);
+            background: #1a1a24; 
+            color: #e1e1e6; 
+            border: 1px solid #2d2d3d; /* Viền ô kết quả */
+            font-size: 14px;
         }
 
-        .high { background: var(--gold) !important; color: #000 !important; box-shadow: 0 0 10px rgba(255, 204, 0, 0.4); }
-        .low { background: var(--green) !important; color: #000 !important; }
+        .high { background: var(--gold) !important; color: #000 !important; border-color: var(--gold); }
+        .low { background: var(--green) !important; color: #000 !important; border-color: var(--green); }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="sticky-header" id="headerWrapper">
-        <div class="header-spacer"></div> <div id="header-grid" class="sync-grid"></div>
+        <div class="header-content">
+            <div id="header-grid" class="sync-grid"></div>
+        </div>
     </div>
 
     <div class="controls">
         <div class="row">
             <div class="control-group">
-                <label>File (.txt)</label>
+                <label>Dữ liệu số (.txt)</label>
                 <input type="file" id="fileInput" accept=".txt">
             </div>
             <div class="control-group">
-                <label>Số cột (X)</label>
+                <label>Số cột hiển thị (X)</label>
                 <input type="number" id="rowLength" value="10">
             </div>
         </div>
         <div class="control-group">
             <label>Quy tắc T1 (A:>=5, B:<5)</label>
             <div class="btn-group">
-                <input type="text" id="t1Input" style="flex: 1;" placeholder="VD: AAAbbb">
-                <button class="main-btn btn-apply" onclick="applyT1()">ÁP DỤNG SOI NGƯỢC</button>
-                <button class="main-btn btn-reset" onclick="clearMemory()">Reset</button>
+                <input type="text" id="t1Input" style="flex: 2;" placeholder="Ví dụ: AAAbbb">
+                <button class="main-btn btn-apply" onclick="applyT1()">ÁP DỤNG</button>
             </div>
         </div>
         <div class="btn-group">
-            <button class="main-btn btn-high" onclick="processData('big')">Tô số Lớn</button>
-            <button class="main-btn btn-low" onclick="processData('small')">Tô số Nhỏ</button>
+            <button class="main-btn btn-apply" style="background:var(--gold); color:#000" onclick="processData('big')">TÔ SỐ LỚN</button>
+            <button class="main-btn btn-apply" style="background:var(--green); color:#000" onclick="processData('small')">TÔ SỐ NHỎ</button>
+            <button class="main-btn btn-reset" onclick="clearMemory()">DỌN CACHE</button>
         </div>
-    </div>
-
-    <div class="info-bar">
-        T1: <span id="current-t1-display" style="color: var(--primary); font-weight: bold;">--</span> 
-        | Dữ liệu: <span id="total-count" style="color: var(--green);">0</span>
     </div>
 
     <div id="result-container">
@@ -184,12 +196,10 @@
     const fileInput = document.getElementById('fileInput');
     const rowLengthInput = document.getElementById('rowLength');
     const t1Input = document.getElementById('t1Input');
-    const currentT1Display = document.getElementById('current-t1-display');
     const headerGrid = document.getElementById('header-grid');
     const resultGrid = document.getElementById('result-grid');
     const resultContainer = document.getElementById('result-container');
     const headerWrapper = document.getElementById('headerWrapper');
-    const totalCountSpan = document.getElementById('total-count');
 
     let currentNumbers = []; 
 
@@ -199,21 +209,17 @@
 
     window.onload = function() {
         rowLengthInput.value = localStorage.getItem('userRowLength') || 10;
-        const savedT1 = localStorage.getItem('userT1') || 'AAAb';
-        t1Input.value = savedT1;
-        currentT1Display.textContent = savedT1;
-        
+        t1Input.value = localStorage.getItem('userT1') || 'AAAb';
         const savedData = localStorage.getItem('userCurrentNumbers');
         if (savedData) {
             currentNumbers = JSON.parse(savedData);
-            totalCountSpan.textContent = currentNumbers.length;
             refreshAll();
         }
         updateHeaderGrid();
     };
 
     function clearMemory() {
-        if(confirm("Xóa dữ liệu?")) { localStorage.clear(); location.reload(); }
+        localStorage.clear(); location.reload();
     }
 
     function refreshAll() {
@@ -224,10 +230,7 @@
     }
 
     function applyT1() {
-        const val = t1Input.value.trim();
-        if(!val) return alert("Nhập T1!");
-        localStorage.setItem('userT1', val);
-        currentT1Display.textContent = val;
+        localStorage.setItem('userT1', t1Input.value.trim());
         localStorage.setItem('userLastMode', 't1');
         refreshAll();
     }
@@ -240,10 +243,9 @@
     fileInput.addEventListener('change', function() {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const cleanText = e.target.result.replace(/[\s\r\n\\,]+/g, '');
-            currentNumbers = cleanText.split('').map(Number).filter(n => !isNaN(n));
+            const cleanText = e.target.result.replace(/[^0-9]/g, '');
+            currentNumbers = cleanText.split('').map(Number);
             localStorage.setItem('userCurrentNumbers', JSON.stringify(currentNumbers));
-            totalCountSpan.textContent = currentNumbers.length;
             refreshAll();
         };
         reader.readAsText(this.files[0]);
@@ -256,8 +258,18 @@
 
     function updateHeaderGrid() {
         const x = parseInt(rowLengthInput.value) || 10;
-        headerGrid.style.gridTemplateColumns = `repeat(${x}, var(--cell-size))`;
+        headerGrid.style.gridTemplateColumns = `var(--stt-width) var(--spacer-width) repeat(${x}, var(--cell-size))`;
         headerGrid.innerHTML = '';
+        
+        const sttEmpty = document.createElement('div');
+        sttEmpty.className = 'row-stt';
+        sttEmpty.style.background = 'transparent';
+        headerGrid.appendChild(sttEmpty);
+
+        const spacerEmpty = document.createElement('div');
+        spacerEmpty.className = 'spacer-cell';
+        headerGrid.appendChild(spacerEmpty);
+
         for (let i = 0; i < x; i++) {
             const box = document.createElement('div');
             box.className = `index-box idx-${i % 10}`;
@@ -270,8 +282,7 @@
         resultGrid.innerHTML = ''; 
         if (data.length === 0) return;
         
-        // Cột STT + số cột dữ liệu
-        resultGrid.style.gridTemplateColumns = `40px repeat(${columns}, var(--cell-size))`;
+        resultGrid.style.gridTemplateColumns = `var(--stt-width) var(--spacer-width) repeat(${columns}, var(--cell-size))`;
         
         const T1 = t1Input.value.trim().toUpperCase() || 'AAAb';
         const t1Len = T1.length;
@@ -280,12 +291,10 @@
         if (mode === 't1') {
             const reversedMap = data.map((num, i) => {
                 const char = T1[i % t1Len];
-                if (char === 'A') return num < 5;
-                if (char === 'B') return num >= 5;
-                return false;
+                return char === 'A' ? num < 5 : num >= 5;
             });
             for (let i = 0; i <= data.length - 5; i++) {
-                if (reversedMap[i] && reversedMap[i+1] && reversedMap[i+2] && reversedMap[i+3] && reversedMap[i+4]) {
+                if (reversedMap.slice(i, i+5).every(v => v)) {
                     for (let j = 0; j < 5; j++) isYellow[i+j] = true;
                 }
             }
@@ -293,25 +302,24 @@
 
         const fragment = document.createDocumentFragment();
         data.forEach((num, index) => {
-            // Nếu là đầu hàng, chèn ô STT
             if (index % columns === 0) {
                 const sttBox = document.createElement('div');
                 sttBox.className = 'row-stt';
                 sttBox.textContent = (index / columns) + 1;
                 fragment.appendChild(sttBox);
+                
+                const spacer = document.createElement('div');
+                spacer.className = 'spacer-cell';
+                fragment.appendChild(spacer);
             }
 
             const box = document.createElement('div');
             box.className = 'number-box';
             box.textContent = num;
             
-            if (mode === 't1' && isYellow[index]) {
-                box.classList.add('high');
-            } else if (mode === 'big' && num >= 5) {
-                box.classList.add('high');
-            } else if (mode === 'small' && num < 5) {
-                box.classList.add('low');
-            }
+            if (mode === 't1' && isYellow[index]) box.classList.add('high');
+            else if (mode === 'big' && num >= 5) box.classList.add('high');
+            else if (mode === 'small' && num < 5) box.classList.add('low');
             
             fragment.appendChild(box);
         });
