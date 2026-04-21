@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T1k</title>
+    <title>Phân Tích Số Liệu - Bản Chuẩn</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -31,7 +31,7 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        .container { width: 100%; max-width: 600px; } /* Giới hạn độ rộng để đẹp trên mobile */
+        .container { width: 100%; max-width: 600px; }
 
         #status-bar {
             width: 100%; padding: 12px; border-radius: 8px;
@@ -90,7 +90,6 @@
 
         .row-stt { width: var(--stt-width) !important; background: var(--danger); color: white; font-size: 12px; }
 
-        /* MÀU HEADER */
         .idx-0 { background: #ff4b1f; } .idx-1 { background: #0052D4; } 
         .idx-2 { background: #8E2DE2; } .idx-3 { background: #11998e; }
         .idx-4 { background: #f09819; } .idx-5 { background: #4568dc; }
@@ -101,7 +100,7 @@
         .high { background: var(--gold) !important; color: #000 !important; }
         .low { background: var(--green) !important; color: #000 !important; }
 
-        /* --- PHẦN SỬA ĐỔI: NHẤP NHÁY SIÊU CHẬM --- */
+        /* NHẤP NHÁY SIÊU CHẬM (3 GIÂY) */
         @keyframes ultraSoftBlink {
             0% { background: #1a1a24; color: #e1e1e6; }
             50% { background: var(--gold); color: #000; box-shadow: 0 0 20px var(--gold); }
@@ -112,7 +111,6 @@
             border: none !important; 
             z-index: 5;
         }
-        /* ----------------------------------------- */
 
         ::-webkit-scrollbar { height: 6px; }
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
@@ -169,7 +167,6 @@
 
     let currentNumbers = [];
 
-    // Tự cập nhật khi sửa số
     [rowLengthInput, stepKInput].forEach(el => {
         el.addEventListener('input', () => { if(currentNumbers.length > 0) refreshAll(); });
     });
@@ -256,14 +253,24 @@
         if (mode === 'stepK') {
             for (let r = 0; r < rows.length - k; r++) {
                 const rowU = rows[r], rowL = rows[r + k];
+                // Chỉ kiểm tra khi cả 2 hàng đều đủ số cột
                 if (rowU.length === columns && rowL.length === columns) {
-                    let isRev = true;
+                    let isStrictReverse = true;
                     for (let c = 0; c < columns; c++) {
-                        if ((rowU[c] >= 5) === (rowL[c] >= 5)) { isRev = false; break; }
+                        // Logic: Lớn (>=5) và Nhỏ (<5)
+                        const isUHigh = rowU[c] >= 5;
+                        const isLHigh = rowL[c] >= 5;
+                        // Nếu 2 ô cùng loại (cùng Lớn hoặc cùng Nhỏ) thì hàng này không "ngược" hoàn toàn
+                        if (isUHigh === isLHigh) { 
+                            isStrictReverse = false; 
+                            break; 
+                        }
                     }
-                    if (isRev) {
+                    if (isStrictReverse) {
                         matchCount++;
-                        for (let c = 0; c < columns; c++) { markMap[r][c] = markMap[r+k][c] = 'blink'; }
+                        for (let c = 0; c < columns; c++) { 
+                            markMap[r][c] = markMap[r+k][c] = 'blink'; 
+                        }
                     }
                 }
             }
@@ -274,7 +281,7 @@
         rows.forEach((rowData, rIndex) => {
             const stt = document.createElement('div'); stt.className = 'row-stt'; stt.textContent = rIndex + 1;
             fragment.appendChild(stt);
-            fragment.appendChild(document.createElement('div')); // spacer
+            fragment.appendChild(document.createElement('div'));
 
             rowData.forEach((num, cIndex) => {
                 const box = document.createElement('div');
