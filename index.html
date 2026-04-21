@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phân tích số liệu - Auto Load</title>
+    <title>Phân tích số liệu - Tùy chỉnh T1</title>
     <style>
         :root {
             --body-bg: #121212;
@@ -33,19 +33,17 @@
             max-width: 1200px;
         }
 
-        /* Hiển thị số lượng */
         .info-bar {
             text-align: center;
             font-size: 14px;
             color: #aaa;
             margin: 10px 0;
-            padding: 5px;
+            padding: 8px;
             background: rgba(255,255,255,0.05);
             border-radius: 5px;
         }
         #total-count { color: var(--bg-high); font-weight: bold; font-size: 16px; }
 
-        /* THANH STT - TÀNG HÌNH */
         .sticky-header {
             position: sticky;
             top: 0;
@@ -56,7 +54,6 @@
             display: block;
         }
 
-        /* VÙNG KẾT QUẢ - TÀNG HÌNH */
         #result-container { 
             width: 100%;
             overflow-x: auto; 
@@ -85,7 +82,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* Màu Gradient STT */
         .idx-0 { background: linear-gradient(135deg, #ff4b1f, #ff9068); }
         .idx-1 { background: linear-gradient(135deg, #1fddff, #1291ff); }
         .idx-2 { background: linear-gradient(135deg, #ff00cc, #333399); }
@@ -113,27 +109,33 @@
         .high { background-color: var(--bg-high) !important; color: #000 !important; box-shadow: 0 0 8px var(--bg-high); }
         .low { background-color: var(--bg-low) !important; color: #fff !important; box-shadow: 0 0 8px var(--bg-low); }
 
-        /* BỘ ĐIỀU KHIỂN */
         .controls {
             margin: 20px 10px;
             padding: 15px;
             background: #1e1e1e;
             border-radius: 10px;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 15px;
         }
 
+        @media (min-width: 768px) {
+            .controls { grid-template-columns: repeat(3, 1fr); align-items: flex-end; }
+        }
+
         .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .input-with-btn { display: flex; gap: 5px; }
+        .input-with-btn input { flex: 1; }
+        
         label { font-size: 13px; color: #888; }
         input { padding: 12px; border: 1px solid #333; border-radius: 6px; background: #2d2d2d; color: white; font-size: 16px; }
 
+        .main-btn { border: none; padding: 12px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; transition: 0.2s; }
+        .main-btn:active { transform: scale(0.95); }
+        .btn-apply { background: #007bff; width: 100px; }
+        .btn-high { background: #b8860b; flex: 1; }
+        .btn-low { background: #2e7d32; flex: 1; }
         .btn-group { display: flex; gap: 10px; }
-        .main-btn { flex: 1; border: none; padding: 12px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; }
-        .btn-high { background: #b8860b; }
-        .btn-low { background: #2e7d32; }
-
-        @media (min-width: 600px) { .controls { flex-direction: row; align-items: flex-end; } }
     </style>
 </head>
 <body>
@@ -148,17 +150,32 @@
             <label>File dữ liệu</label>
             <input type="file" id="fileInput" accept=".txt">
         </div>
+
         <div class="control-group">
-            <label>Độ dài (x)</label>
+            <label>Chuỗi T1 (A: >=5, b: <5)</label>
+            <div class="input-with-btn">
+                <input type="text" id="t1Input" placeholder="VD: AAAbbbAAbb">
+                <button class="main-btn btn-apply" onclick="applyT1()">ÁP DỤNG</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Độ dài dòng (x)</label>
             <input type="number" id="rowLength" value="10" min="1">
         </div>
-        <div class="btn-group">
-            <button class="main-btn btn-high" onclick="processData('high')">TÔ VÀNG</button>
-            <button class="main-btn btn-low" onclick="processData('low')">TÔ XANH</button>
+
+        <div class="control-group" style="grid-column: span 3;">
+            <div class="btn-group">
+                <button class="main-btn btn-high" onclick="processData('high')">TÔ VÀNG THEO T1</button>
+                <button class="main-btn btn-low" onclick="processData('low')">TÔ XANH (< 5)</button>
+            </div>
         </div>
     </div>
 
-    <div class="info-bar">Tổng số lượng chữ số: <span id="total-count">0</span></div>
+    <div class="info-bar">
+        Chuỗi đang dùng: <span id="current-t1-display" style="color: cyan; font-weight: bold;">--</span> 
+        | Tổng số: <span id="total-count">0</span>
+    </div>
 
     <div id="result-container">
         <div id="result-grid" class="sync-grid"></div>
@@ -168,55 +185,62 @@
 <script>
     const fileInput = document.getElementById('fileInput');
     const rowLengthInput = document.getElementById('rowLength');
+    const t1Input = document.getElementById('t1Input');
+    const currentT1Display = document.getElementById('current-t1-display');
     const headerGrid = document.getElementById('header-grid');
     const resultContainer = document.getElementById('result-container');
     const headerWrapper = document.getElementById('headerWrapper');
     const totalCountSpan = document.getElementById('total-count');
 
-    let currentNumbers = []; // Biến lưu trữ số liệu đã đọc
+    let currentNumbers = []; 
 
-    // Đồng bộ cuộn ngang
     resultContainer.onscroll = function() {
         headerWrapper.scrollLeft = resultContainer.scrollLeft;
     };
 
     window.onload = function() {
-        // Tải Độ dài (x)
+        // Load cấu hình cũ
         const savedLength = localStorage.getItem('userRowLength');
         if (savedLength) rowLengthInput.value = savedLength;
+
+        const savedT1 = localStorage.getItem('userT1') || 'AAAbbbAAbb';
+        t1Input.value = savedT1;
+        currentT1Display.textContent = savedT1;
         
-        // Tải Dữ liệu số đã lưu
         const savedData = localStorage.getItem('userCurrentNumbers');
         if (savedData) {
             currentNumbers = JSON.parse(savedData);
             totalCountSpan.textContent = currentNumbers.length;
-            
-            // Tải chế độ màu sắc đã dùng cuối cùng
             const savedMode = localStorage.getItem('userLastMode') || '';
             renderGrid(currentNumbers, parseInt(rowLengthInput.value), savedMode);
         }
-
         updateHeaderGrid();
     };
 
-    // Khi thay đổi file, đọc và đếm số lượng ngay lập tức
+    function applyT1() {
+        const val = t1Input.value.trim();
+        if(!val) {
+            alert("Vui lòng nhập chuỗi T1!");
+            return;
+        }
+        localStorage.setItem('userT1', val);
+        currentT1Display.textContent = val;
+        // Re-render nếu đã có dữ liệu
+        if (currentNumbers.length > 0) {
+            const lastMode = localStorage.getItem('userLastMode') || '';
+            renderGrid(currentNumbers, parseInt(rowLengthInput.value), lastMode);
+        }
+    }
+
     fileInput.addEventListener('change', function() {
         if (!this.files[0]) return;
-        
         const reader = new FileReader();
         reader.onload = function(e) {
             const rawText = e.target.result;
-            // Xử lý dữ liệu
-            const cleanText = rawText.replace(/\\/g, ' ').replace(/\\/gi, ' ');
+            const cleanText = rawText.replace(/\\/g, ' ');
             currentNumbers = cleanText.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-            
-            // Lưu dữ liệu vào LocalStorage
             localStorage.setItem('userCurrentNumbers', JSON.stringify(currentNumbers));
-            
-            // Hiện số lượng ngay khi load xong
             totalCountSpan.textContent = currentNumbers.length;
-            
-            // Render grid mặc định khi mới chọn file
             renderGrid(currentNumbers, parseInt(rowLengthInput.value), '');
         };
         reader.readAsText(this.files[0]);
@@ -225,7 +249,6 @@
     rowLengthInput.addEventListener('input', function() {
         localStorage.setItem('userRowLength', rowLengthInput.value);
         updateHeaderGrid();
-        // Nếu đã có dữ liệu thì vẽ lại lưới luôn khi thay đổi x
         if (currentNumbers.length > 0) {
             const lastMode = localStorage.getItem('userLastMode') || '';
             renderGrid(currentNumbers, parseInt(this.value), lastMode);
@@ -247,25 +270,59 @@
 
     function processData(mode) {
         if (currentNumbers.length === 0) {
-            alert("Vui lòng tải file hoặc chờ file load xong!");
+            alert("Vui lòng tải file dữ liệu!");
             return;
         }
-        const x = parseInt(rowLengthInput.value);
-        // Lưu chế độ hiện tại (vàng/xanh)
         localStorage.setItem('userLastMode', mode);
-        renderGrid(currentNumbers, x, mode);
+        renderGrid(currentNumbers, parseInt(rowLengthInput.value), mode);
     }
 
     function renderGrid(data, columns, mode) {
         const grid = document.getElementById('result-grid');
         grid.innerHTML = ''; 
         grid.style.gridTemplateColumns = `repeat(${columns}, var(--cell-size))`;
-        data.forEach(num => {
+
+        const T1 = t1Input.value.trim() || 'AAAbbbAAbb';
+        const highlightYellow = new Array(data.length).fill(false);
+
+        if (mode === 'high') {
+            // Bước 1: Map vi phạm theo chuỗi T1 động
+            const violationMap = data.map((num, i) => {
+                const rule = T1[i % T1.length];
+                if (rule === 'A' || rule === 'a') return num < 5;
+                if (rule === 'b' || rule === 'B') return num >= 5;
+                return false;
+            });
+
+            // Bước 2: Kiểm tra dãy 5 số liên tiếp vi phạm toàn bộ
+            for (let i = 0; i <= data.length - 5; i++) {
+                let isSequenceViolated = true;
+                for (let j = 0; j < 5; j++) {
+                    if (!violationMap[i + j]) {
+                        isSequenceViolated = false;
+                        break;
+                    }
+                }
+                
+                if (isSequenceViolated) {
+                    for (let j = 0; j < 5; j++) {
+                        highlightYellow[i + j] = true;
+                    }
+                }
+            }
+        }
+
+        // Bước 3: Vẽ
+        data.forEach((num, index) => {
             const box = document.createElement('div');
             box.className = 'number-box';
             box.textContent = num;
-            if (mode === 'high' && num >= 5) box.classList.add('high');
-            else if (mode === 'low' && num < 5) box.classList.add('low');
+
+            if (mode === 'high' && highlightYellow[index]) {
+                box.classList.add('high');
+            } else if (mode === 'low' && num < 5) {
+                box.classList.add('low');
+            }
             grid.appendChild(box);
         });
     }
