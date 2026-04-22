@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>tim T1klv3</title>
+    <title>tim T1klv3 - Updated</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap');
 
@@ -23,7 +23,6 @@
 
         .container { width: 100%; max-width: 650px; }
 
-        /* THANH TRẠNG THÁI */
         #status-bar {
             width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 12px;
             font-size: 13px; font-weight: 700; text-align: center; display: none; border: 1px solid transparent;
@@ -31,7 +30,6 @@
         .status-info { background: rgba(61, 90, 254, 0.1); color: var(--primary); border-color: var(--primary); }
         .status-success { background: rgba(0, 230, 118, 0.2); color: var(--green); border-color: var(--green); }
 
-        /* KẾT QUẢ TỰ ĐỘNG TÌM KIẾM */
         #search-results {
             background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px;
             border: 1px solid #333; max-height: 180px; overflow-y: auto; display: none; width: 100%;
@@ -43,11 +41,10 @@
         .result-item:hover { background: var(--primary); color: white; border-color: white; }
         .result-item b { color: var(--gold); }
 
-        /* HEADER CỐ ĐỊNH & ĐỒNG BỘ CUỘN */
         .sticky-header {
             position: sticky; top: 0; z-index: 100; background: var(--body-bg);
             padding: 10px 0; border-bottom: 2px solid #333; 
-            overflow: hidden; /* Quan trọng để JS điều khiển cuộn */
+            overflow: hidden;
         }
         .header-content { display: flex; width: max-content; padding-left: 10px; }
 
@@ -63,23 +60,21 @@
             background: var(--input-bg); border: 1px solid #333; border-radius: 6px;
             padding: 10px; color: white; font-family: 'JetBrains Mono', monospace; font-size: 14px;
         }
+        input[readonly] { background: #12121a; color: var(--gold); border-color: #444; cursor: default; }
 
-        /* NÚT BẤM */
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .main-btn {
             border: none; padding: 10px; border-radius: 6px; font-weight: 700;
             cursor: pointer; font-size: 11px; text-transform: uppercase; transition: 0.2s;
         }
-        .active-mode { box-shadow: 0 0 10px var(--primary); transform: scale(0.98); }
+        .active-mode { box-shadow: 0 0 10px var(--primary); border: 1px solid white !important; }
 
-        /* KHU VỰC HIỂN THỊ DỮ LIỆU */
         #result-container {
             width: 100%; background: #0d0d12; border-radius: 12px; padding: 10px;
             border: 1px solid #2d2d3d; overflow-x: auto;
         }
         .sync-grid { display: grid; gap: var(--gap); width: max-content; }
 
-        /* Ô SỐ */
         .number-box, .index-box, .row-stt {
             width: var(--cell-size); height: var(--cell-size);
             display: flex; justify-content: center; align-items: center;
@@ -90,7 +85,6 @@
         .high { background: var(--gold) !important; color: #000 !important; }
         .low { background: var(--green) !important; color: #000 !important; }
 
-        /* HEADER MÀU SẮC */
         .idx-box { border: 1px solid rgba(255,255,255,0.1); }
         .idx-0 { background: #ff4b1f; } .idx-1 { background: #0052D4; } 
         .idx-2 { background: #8E2DE2; } .idx-3 { background: #11998e; }
@@ -129,13 +123,20 @@
                 <label>File Dữ Liệu</label>
                 <input type="file" id="fileInput" accept=".txt">
             </div>
-            <button class="main-btn" style="background: #6200ea; color: white;" onclick="autoSearchAll()">QUÉT BỘ SỐ</button>
-            <button class="main-btn" style="background: #444; color: white;" onclick="clearData()">DỌN</button>
+            <div class="group" style="flex: 1;">
+                <label>Tổng Chữ Số</label>
+                <input type="text" id="totalChars" value="0" readonly>
+            </div>
         </div>
 
         <div class="control-row">
-            <div class="group"><label>Số Cột (X)</label><input type="number" id="rowLength" value="2"></div>
-            <div class="group"><label>Bước Nhảy (K)</label><input type="number" id="stepK" value="1"></div>
+            <button class="main-btn" style="flex:1; background: #6200ea; color: white;" onclick="autoSearchAll()">QUÉT BỘ SỐ</button>
+            <button class="main-btn" style="flex:1; background: #444; color: white;" onclick="clearData()">DỌN SẠCH</button>
+        </div>
+
+        <div class="control-row">
+            <div class="group"><label>Số Cột (X)</label><input type="number" id="rowLength" value="2" onchange="refresh()"></div>
+            <div class="group"><label>Bước Nhảy (K)</label><input type="number" id="stepK" value="1" onchange="refresh()"></div>
         </div>
 
         <div class="btn-grid">
@@ -155,6 +156,7 @@
     const fileInput = document.getElementById('fileInput'),
           rowLengthInput = document.getElementById('rowLength'),
           stepKInput = document.getElementById('stepK'),
+          totalCharsInput = document.getElementById('totalChars'),
           statusBar = document.getElementById('status-bar'),
           resultGrid = document.getElementById('result-grid'),
           resultContainer = document.getElementById('result-container'),
@@ -164,6 +166,7 @@
 
     let currentNumbers = [];
 
+    // Đồng bộ cuộn Header
     resultContainer.addEventListener('scroll', () => {
         headerWrapper.scrollLeft = resultContainer.scrollLeft;
     });
@@ -174,43 +177,70 @@
     }
 
     function clearData() {
-        if(confirm("Xóa toàn bộ dữ liệu?")) { localStorage.clear(); location.reload(); }
+        if(confirm("Xóa toàn bộ dữ liệu đã lưu?")) { 
+            localStorage.clear(); 
+            location.reload(); 
+        }
     }
 
+    // TẢI DỮ LIỆU TỪ LOCALSTORAGE KHI MỞ TRANG
     window.onload = function() {
         rowLengthInput.value = localStorage.getItem('userX') || 2;
         stepKInput.value = localStorage.getItem('userK') || 1;
-        const saved = localStorage.getItem('userNums');
-        if (saved) { currentNumbers = JSON.parse(saved); refresh(); }
+        
+        const savedNums = localStorage.getItem('userNums');
+        if (savedNums) { 
+            currentNumbers = JSON.parse(savedNums); 
+            totalCharsInput.value = currentNumbers.length;
+        }
+
+        const savedMode = localStorage.getItem('userMode') || 'stepK';
+        updateActiveButton(savedMode);
+        
+        if (currentNumbers.length > 0) refresh();
     };
 
+    // ĐỌC FILE VÀ LƯU VÀO LOCALSTORAGE
     fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
         const reader = new FileReader();
         reader.onload = function(event) {
             currentNumbers = event.target.result.replace(/[^0-9]/g, '').split('').map(Number);
+            totalCharsInput.value = currentNumbers.length;
             localStorage.setItem('userNums', JSON.stringify(currentNumbers));
             refresh();
         };
-        reader.readAsText(e.target.files[0]);
+        reader.readAsText(file);
     };
+
+    function updateActiveButton(mode) {
+        document.querySelectorAll('.main-btn').forEach(b => b.classList.remove('active-mode'));
+        const activeBtn = document.getElementById('btn-' + mode);
+        if (activeBtn) activeBtn.classList.add('active-mode');
+    }
 
     function setMode(mode) {
         localStorage.setItem('userMode', mode);
-        document.querySelectorAll('.main-btn').forEach(b => b.classList.remove('active-mode'));
-        document.getElementById('btn-' + mode)?.classList.add('active-mode');
+        updateActiveButton(mode);
         refresh();
     }
 
     function refresh() {
-        const x = parseInt(rowLengthInput.value) || 2, k = parseInt(stepKInput.value) || 1;
-        localStorage.setItem('userX', x); localStorage.setItem('userK', k);
-        updateHeader(x); render(x, k);
+        const x = parseInt(rowLengthInput.value) || 2;
+        const k = parseInt(stepKInput.value) || 1;
+        
+        localStorage.setItem('userX', x); 
+        localStorage.setItem('userK', k);
+        
+        updateHeader(x); 
+        render(x, k);
     }
 
     function updateHeader(x) {
         const grid = document.getElementById('header-grid');
         grid.style.gridTemplateColumns = `var(--stt-width) var(--spacer-width) repeat(${x}, var(--cell-size))`;
-        // Thêm 1 ô stt trống (row-stt style) và 1 ô spacer trống
         grid.innerHTML = '<div class="row-stt" style="background:transparent; border:1px dashed #333"></div><div style="width:var(--spacer-width)"></div>';
         for (let i = 0; i < x; i++) {
             const box = document.createElement('div');
@@ -221,8 +251,9 @@
     }
 
     function autoSearchAll() {
-        if (!currentNumbers.length) return alert("Chưa có file!");
-        listItems.innerHTML = ''; searchResults.style.display = 'block';
+        if (!currentNumbers.length) return alert("Vui lòng chọn file dữ liệu trước!");
+        listItems.innerHTML = ''; 
+        searchResults.style.display = 'block';
         let found = 0;
         for (let x = 2; x <= 9; x++) {
             for (let k = 1; k <= 30; k++) {
@@ -231,12 +262,16 @@
                     const item = document.createElement('div');
                     item.className = 'result-item';
                     item.innerHTML = `X:<b>${x}</b> | K:<b>${k}</b> (u=${u})`;
-                    item.onclick = () => { rowLengthInput.value = x; stepKInput.value = k; refresh(); };
+                    item.onclick = () => { 
+                        rowLengthInput.value = x; 
+                        stepKInput.value = k; 
+                        refresh(); 
+                    };
                     listItems.appendChild(item); found++;
                 }
             }
         }
-        showStatus(`Tìm thấy ${found} bộ số phù hợp!`, "info");
+        showStatus(`Tìm thấy ${found} bộ số có u ≤ 1!`, "info");
     }
 
     function checkU(data, x, k) {
@@ -245,7 +280,9 @@
         for (let r = 0; r < rows.length - k; r++) {
             if (rows[r].length === x && rows[r+k].length === x) {
                 let isRev = true;
-                for (let c = 0; c < x; c++) { if ((rows[r][c] >= 5) === (rows[r+k][c] >= 5)) { isRev = false; break; } }
+                for (let c = 0; c < x; c++) { 
+                    if ((rows[r][c] >= 5) === (rows[r+k][c] >= 5)) { isRev = false; break; } 
+                }
                 if (isRev) u++;
             }
         }
@@ -253,7 +290,9 @@
     }
 
     function render(x, k) {
-        resultGrid.innerHTML = ''; if (!currentNumbers.length) return;
+        resultGrid.innerHTML = ''; 
+        if (!currentNumbers.length) return;
+
         const mode = localStorage.getItem('userMode') || 'stepK';
         resultGrid.style.gridTemplateColumns = `var(--stt-width) var(--spacer-width) repeat(${x}, var(--cell-size))`;
         
@@ -266,25 +305,51 @@
             for (let r = 0; r < rows.length - k; r++) {
                 if (rows[r].length === x && rows[r+k].length === x) {
                     let isRev = true;
-                    for (let c = 0; c < x; c++) { if ((rows[r][c] >= 5) === (rows[r+k][c] >= 5)) { isRev = false; break; } }
-                    if (isRev) { count++; for (let c = 0; c < x; c++) marks[r][c] = marks[r+k][c] = 'blink'; }
+                    for (let c = 0; c < x; c++) { 
+                        if ((rows[r][c] >= 5) === (rows[r+k][c] >= 5)) { isRev = false; break; } 
+                    }
+                    if (isRev) { 
+                        count++; 
+                        for (let c = 0; c < x; c++) marks[r][c] = marks[r+k][c] = 'blink'; 
+                    }
                 }
             }
-            showStatus(count > 0 ? `Tìm thấy ${count} cặp ngược!` : "Không có cặp nào.", count > 0 ? "success" : "info");
+            showStatus(count > 0 ? `Tìm thấy ${count} cặp ngược nhau!` : "Không tìm thấy cặp ngược ở bước K này.", count > 0 ? "success" : "info");
+        } else {
+            statusBar.style.display = 'none';
         }
 
         const frag = document.createDocumentFragment();
         rows.forEach((row, rIdx) => {
-            const stt = document.createElement('div'); stt.className = 'row-stt'; stt.textContent = rIdx + 1;
-            frag.appendChild(stt); frag.appendChild(document.createElement('div'));
+            const stt = document.createElement('div'); 
+            stt.className = 'row-stt'; 
+            stt.textContent = rIdx + 1;
+            frag.appendChild(stt); 
+            
+            frag.appendChild(document.createElement('div')); // Spacer
+
             row.forEach((n, cIdx) => {
-                const box = document.createElement('div'); box.className = 'number-box'; box.textContent = n;
-                if (marks[rIdx][cIdx] === 'blink') box.classList.add('blink');
-                else if (mode === 'big' && n >= 5) box.classList.add('high');
-                else if (mode === 'small' && n < 5) box.classList.add('low');
+                const box = document.createElement('div'); 
+                box.className = 'number-box'; 
+                box.textContent = n;
+                
+                if (marks[rIdx][cIdx] === 'blink') {
+                    box.classList.add('blink');
+                } else if (mode === 'big' && n >= 5) {
+                    box.classList.add('high');
+                } else if (mode === 'small' && n < 5) {
+                    box.classList.add('low');
+                }
                 frag.appendChild(box);
             });
-            for (let i = row.length; i < x; i++) frag.appendChild(document.createElement('div')).className = 'number-box';
+            
+            // Điền nốt các ô trống nếu hàng cuối không đủ cột
+            for (let i = row.length; i < x; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'number-box';
+                empty.style.opacity = "0.2";
+                frag.appendChild(empty);
+            }
         });
         resultGrid.appendChild(frag);
     }
